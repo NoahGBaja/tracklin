@@ -1,6 +1,6 @@
 'use client'
 import '../../css/app.css'; 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/ui/header';
 import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react'
@@ -162,43 +162,59 @@ export default function Home() {
         </div>
         <div className='flex flex-col items-center w-[100%] h-[75%] justify-baseline'>
           <div className="flex flex-col h-full rounded-2xl text-8xl [-webkit-text-stroke:0.4px_black] [text-shadow:_4px_4px_0_#000] font-extralight justify-center items-center text-white">
-            <p>
-            Hello! 
-            </p>
-            <p>
-            Welcome to Tracklin!
-            </p>
+            <motion.div 
+            initial={{opacity:0, x:-100}}
+            animate={{opacity:1, x:0}}
+            transition={{duration:1}}
+            className='flex flex-col items-center'>
+              <p>
+              Hello! 
+              </p>
+              <p>
+              Welcome to Tracklin!
+              </p>
+            </motion.div>
             <div className='flex flex-row w-screen h-full'>
               <div className='flex flex-col items-center w-[25%] h-full justify-center'>
-                <div className='flex flex-col w-[65%] h-[65%] justify-center items-center'>
-                <Note/>
-                </div>
+                <motion.div 
+                initial={{scale:0, opacity:0}}
+                animate={{scale:1, opacity:1}}
+                transition={{duration:0.9, ease:'circOut',type:'spring'}}
+                className='flex flex-col w-[65%] h-[65%] justify-center items-center'>
+                  <Note/>
+                </motion.div>
               </div>
               <div className='flex justify-between w-[50%]'>
-                <button className='w-[300px] h-[100px]'>
+                <motion.button 
+                initial={{scale:0, opacity:0}}
+                animate={{scale:1, opacity:1}}
+                transition={{duration:0.9, ease:'circOut',type:'spring'}}
+                className='w-[300px] h-[100px]'>
                   <SignIn/>
-                </button>
-                <button className='w-[300px] h-[100px]'>
+                </motion.button>
+                <motion.button 
+                initial={{scale:0, opacity:0}}
+                animate={{scale:1, opacity:1}}
+                transition={{duration:0.9, ease:'easeInOut', type:'spring', delay:0.2}}
+                className='w-[300px] h-[100px]'>
                     <Link href={'/about'}>
                         <LearnMore/>
                     </Link>
-                </button>
+                </motion.button>
               </div>  
               <div className='flex flex-row w-[25%] h-full justify-center'>
-                <div className='w-[180px] h-[170px]'>
+                <motion.div 
+                initial={{scale:0, opacity:0}}
+                animate={{scale:1, opacity:1}}
+                transition={{duration:0.9, ease:'circOut',type:'spring'}}
+                className='w-[180px] h-[170px]'>
                   <PersonalComputer/>
-                </div>
+                </motion.div>
               </div>
           </div>
             </div>
         </div>
       </div>
-           
-          
-
-  
     </div>
   );
 }
-
-// ReactDOM.createRoot(document.getElementById('root')).render(<App />);

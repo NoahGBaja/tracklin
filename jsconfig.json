@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    // Basis path untuk semua alias
+    "baseUrl": ".",
+
+    // Alias: arahkan @/ ke resources/js/
+    "paths": {
+      "@/*": ["resources/js/*"]
+    },
+
+    // Nonaktifkan pemeriksaan JS karena kamu tidak pakai TypeScript
+    "checkJs": false,
+
+    // Memungkinkan editor (VSCode) paham JSX
+    "jsx": "react-jsx",
+
+    // Menentukan sistem modul yang kompatibel dengan Vite
+    "module": "ESNext",
+    "moduleResolution": "Node",
+
+    // Tambahan opsional untuk DX lebih baik
+    "target": "ESNext",
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true
+  },
+  "include": [
+    "resources/js/**/*",
+    "resources/css/**/*",
+    "vite.config.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "vendor",
+    "public"
+  ]
+}
