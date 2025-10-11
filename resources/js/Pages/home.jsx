@@ -19,7 +19,7 @@ export default function Home() {
           <div className='flex justify-center items-center w-[20%] h-full'>
             <button
             onClick={()=>setRole(!roles)}
-             className='cursor-pointer active:scale-90 active:opacity-100 duration-75 ease-in-out hover:opacity-70 bg-blue-700/80 outline-2 outline-black w-[100px] text-white text-xl h-[50px] rounded-2xl'>
+             className='cursor-pointer outline-blue-600 ring-white ring-4 active:scale-90 active:opacity-100 duration-75 ease-in-out hover:opacity-70 bg-blue-700/80 outline-2 w-[100px] text-white text-xl h-[50px] rounded-2xl'>
               {role}
             </button>          
           </div>
