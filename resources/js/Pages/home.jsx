@@ -9,10 +9,16 @@ export default function Home() {
     const [toDo,setToDo] = useState(false)
     const [clock,setClock] = useState(false)
     const [roles, setRole] = useState(false)
+    // const [showProfile, setShowProfile] = useState(false)
+
     const role = roles?'user':'guest' 
     const size = 2;
   return (
     <div className="fixed inset-0 flex flex-col">
+      <Header role={role} />
+      {/* <Header key={role} role={role} /> */}
+      {/* <Header role={role} userData={userData}/> */}
+      {/* <Header showProfile={showProfile} setShowProfile={setShowProfile} role={role} /> */}
       <div className='min-h-full'>
         <div className='flex h-[10%] w-full'/> 
         <div className='flex flex-row w-[100%] h-[15%]'>
@@ -82,7 +88,9 @@ export default function Home() {
                       type:'spring'
                     }}
                     className='w-[300px] h-[100px]'>
-                      <SignIn/>
+                      <Link href={'/login'}>
+                          <SignIn/>
+                      </Link>
                     </motion.button>
                     <motion.button 
                     initial={{
@@ -107,7 +115,7 @@ export default function Home() {
                   </>  
                   ):(
                     <>
-                      <div className="flex flex-col w-[50%] items-center justify-baseline h-full gap-6">
+                      <Link href={'/todolist'} className="flex flex-col w-[50%] items-center justify-baseline h-full gap-6">
                         <motion.div
                         initial={{opacity:0}}
                         animate={{opacity:1}}
@@ -124,7 +132,7 @@ export default function Home() {
                         <p className="text-4xl">
                             To-Do List 
                         </p>
-                      </div>
+                      </Link>
                       <div className="flex flex-col w-[50%] items-center justify-baseline h-full gap-6">
                         <motion.div
                         initial={{opacity:0}}

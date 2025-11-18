@@ -200,6 +200,56 @@ export const Note = (props) => {
   )
 }
 
+export const Logo = (props) => {
+  return(
+    <img className="w-110 max-h-72 object-contain" src="/assets/tracklin.png" />
+  )
+}
+
+export const Close_Button = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/closebutton.png'/>
+  )
+}
+
+export const Setting_Button = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/settingsbutton.png'/>
+  )
+}
+
+export const Profil = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/profile.png'/>
+  )
+}
+
+export const PencilEdit = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/editpencil.png'/>
+  )
+}
+
+export const Trash = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/trashcan.png'/>
+  )
+}
+
+export const TimeClock = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/time.png'/>
+  )
+}
+
+export const Calendar = (props) => {
+  return(
+    <img className='w-full h-full object-contain' src='/assets/calendar.png'/>
+  )
+}
+
+
+
 export const Pencil = ({props, size}) => {
   const sizing={
     width:76.01/size,
