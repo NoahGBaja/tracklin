@@ -12,7 +12,7 @@ export default function Home() {
     // const [showProfile, setShowProfile] = useState(false)
 
     const role = roles?'user':'guest' 
-    const size = 2;
+    const size = {sizeAll:2, sizePencil:3};
   return (
     <div className="fixed inset-0 flex flex-col">
       <Header role={role} />
@@ -126,8 +126,8 @@ export default function Home() {
                         onHoverStart={()=>setToDo(true)} 
                         onHoverEnd={()=>setToDo(false)}
                         className="flex justify-center items-center gap-x-3 pr-5 hover:opacity-75 cursor-pointer hover:scale-102 transition duration-500 ease-in-out w-[175px] h-[175px] bg-white/90 outline-4 outline-blue-600 ring-8 rounded-full">
-                            <Pencil props={toDo} size={3} />
-                            <Book props={toDo} size={size}/>
+                            <Pencil props={toDo} size={size.sizePencil} />
+                            <Book props={toDo} size={size.sizeAll}/>
                         </motion.div>
                         <p className="text-4xl">
                             To-Do List 
@@ -144,7 +144,7 @@ export default function Home() {
                         onHoverStart={()=>setClock(true)} 
                         onHoverEnd={()=>setClock(false)}
                         className="flex justify-center items-center hover:opacity-75 cursor-pointer hover:scale-102 transition duration-500 ease-in-out w-[175px] h-[175px] bg-white/90 outline-4 outline-blue-600 ring-8 rounded-full">
-                            <Clock props={clock} size={size}/>
+                            <Clock props={clock} size={size.sizeAll}/>
                         </motion.div>
                         <p className="text-4xl">
                             Set Alarm
