@@ -89,6 +89,14 @@ export default function Register() {
                             <p>Already have an account?</p>
                             <Link href="/login" className="ml-2 underline mb-2 cursor-pointer hover:opacity-75">Login</Link>
                         </div>
+
+                        <div className="flex justify-left">
+                                <p>Trouble logging in?</p>
+                                <Link href="/forgot-password" className="ml-2 underline cursor-pointer hover:opacity-75">
+                                    Forgot Password
+                                </Link>
+                        </div>
+                        
                         
                         <button type="submit" 
                         className="mt-auto bg-[#1976D2] hover:bg-[#42A5F5] text-white text-lg py-3 rounded-2xl shadow-md active:scale-95 transition border-2 border-[#0026A4]">
