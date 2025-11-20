@@ -5,12 +5,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-<<<<<<< HEAD
-$pages = ['/', '/about', '/features', '/test', '/login', '/register', '/schedule', '/todolist'];
-=======
 
 $pages = ['/', '/about', '/features', '/test','/login','/register','todolist','schedule', '/Timer', '/forgot-password', '/verify-otp', '/home', 'todolist','schedule'];
->>>>>>> 31ac00591fb2f2f62a956ce2f136ad95af278373
 
 $items = array_map(function($page){
     return ($name= ltrim($page, '/')) === '' ?
