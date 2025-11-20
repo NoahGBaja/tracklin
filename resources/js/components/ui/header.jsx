@@ -2,7 +2,7 @@
 
 import { Link, usePage } from '@inertiajs/react'
 import { useState } from 'react'
-import { Profil, Close_Button, Logo } from "./attributes"
+import { Profil, Close_Button, Setting_Button, Logo } from "./attributes"
 import { router } from '@inertiajs/react'
 
 export default function Header({ sidebar, role, userData }) {
@@ -10,6 +10,10 @@ export default function Header({ sidebar, role, userData }) {
     const [showProfile, setShowProfile] = useState(false)
     const [showLogoutPopup, setShowLogoutPopup] = useState(false)
 
+    const hiddenPages = ['/login', '/register', '/forgot-password']
+    if (hiddenPages.includes(url)) return null;
+
+    // Jangan tampilkan Header di halaman login, register, forgot-password
     const hiddenPages = ['/login', '/register', '/forgot-password']
     if (hiddenPages.includes(url)) return null;
 
@@ -38,16 +42,18 @@ export default function Header({ sidebar, role, userData }) {
                     <div className="flex ml-auto w-[30%] justify-center items-center h-full">
                         <div className="flex justify-evenly items-center text-2xl h-full w-[80%] text-white">
                             {links.map((item, i) => {
+                                // Highlight Features untuk todolist, schedule, atau timer
                                 const active =
                                     url === item.href ||
-                                    (item.name === 'Features' &&
+                                    (item.name === 'Features' && 
                                      (url.startsWith('/todolist') || url === '/schedule' || url === '/timer'))
 
                                 return (
                                     <div
                                         key={i}
                                         className={`cursor-pointer hover:opacity-75 hover:scale-98 transition duration-100 ease-in-out 
-                                        ${active ? 'text-[#1e90ff]' : 'text-[#FFFFFF]'}`}>
+                                        ${active ? 'text-[#1e90ff]' : 'text-[#FFFFFF]'}`}
+                                    >
                                         <Link href={item.href}>{item.name}</Link>
                                     </div>
                                 )
@@ -84,11 +90,12 @@ export default function Header({ sidebar, role, userData }) {
 
                         <div className="flex flex-col w-[65%] relative">
                             <div className="flex justify-end items-center h-[18%] pr-[5%] pt-[2%] space-x-[3%]">
-                                <div onClick={() => setShowLogoutPopup(true)} 
-                                     className="bg-[#005ec2] border-[#0D277B] border-3 #023e8a hover:opacity-60 px-4 py-2 rounded-xl cursor-pointer font-semibold">
-                                    Logout
+                                <div onClick={handleSettingsClick}
+                                     className="w-[6%] cursor-pointer hover:opacity-60">
+                                    <Setting_Button />
                                 </div>
-                                <div onClick={() => setShowProfile(false)} className="w-[5%] cursor-pointer hover:opacity-60">
+                                <div onClick={() => setShowProfile(false)}
+                                     className="w-[5%] cursor-pointer hover:opacity-60">
                                     <Close_Button />
                                 </div>
                             </div>
@@ -101,7 +108,7 @@ export default function Header({ sidebar, role, userData }) {
 
                             <div className="flex justify-center items-center h-[18%]">
                                 <p className="text-[#428DF5] text-4xl"
-                                   style={{textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px 2.5px 0 #0D277B, 2.5px 2.5px 0 #0D277B`}}>
+                                   style={{textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`}}>
                                     Tracklin Agent
                                 </p>
                             </div>

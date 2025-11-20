@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "@inertiajs/react"; // optional if you still want Inertia links
+import { Link, router } from "@inertiajs/react"; 
 import { Logo } from '../components/ui/attributes';
-import { submitRegister } from '../lib/registerHandler';
 
 
 export default function Register() {
@@ -19,7 +18,18 @@ export default function Register() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        submitRegister(formData); // call the separate function
+
+        if (formData.password != formData.ReenterPassword) {
+            alert("Password does not match");
+            return;
+        }
+        router.post('/register', {
+            name: formData.username,
+            email: formData.email,
+            password: formData.password,
+            password_confirmation: formData.ReenterPassword,
+        });
+
     };
     
     return (

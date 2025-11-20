@@ -112,6 +112,13 @@ export default function SchedulePage() {
   };
 
   const openPopup = (task = null) => {
+    const now = new Date();
+
+    if (!task && selectedDate < new Date(today.setHours(0, 0, 0, 0))) {
+      alert("You cannot add task to a past date");
+      return; 
+    }
+
     if (task) {
       setEditingTask(task);
       setPopupText(task.text);
@@ -137,6 +144,7 @@ export default function SchedulePage() {
     }
     setShowPopup(true);
   };
+
 
   const savePopup = () => {
     if (!popupText.trim()) return alert("Task cannot be empty!");
@@ -203,13 +211,13 @@ export default function SchedulePage() {
           <div className="w-full flex justify-start mb-5 -mt-5">
             <div className="relative w-[50%]">
               <p className="absolute -top-10 left-4 text-white text-2xl font-bold"
-                style={{ textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`,}}>
+                style={{ textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`}}>
                 Your schedule
               </p>
-              <p className="absolute -top-10 right-4 text-white text-2xl font-bold cursor-pointer hover:opacity-75"
-                style={{textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`,}}
+              <p className="absolute -top-10 right-4 text-white text-2xl font-bold cursor-pointer hover:text-blue-300 transition-colors duration-200"
+                style={{textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`}}
                 onClick={() => setShowCalendar(true)}>
-                {selectedDate.toLocaleString('default', { month: 'long' })}
+                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
               </p>
 
               <div className="pl-12 pr-12 py-3 rounded-full border border-[#03045E] w-full bg-white/90 font-light flex items-center justify-between relative">
@@ -252,19 +260,25 @@ export default function SchedulePage() {
                 <button onClick={goNext} className="px-2 text-3xl hover:opacity-50">
                   ›
                 </button>
+                  <button
+                  onClick={() => openPopup()}
+                  className="absolute right-[-200px] mt-2 bg-[#1976D2] text-white text-2xl px-5 py-3 rounded-full border-3 border-[#03045E] hover:opacity-80 transition"
+                >
+                  Add New Task
+                </button>
               </div>
             </div>
           </div>
 
           <div className="flex w-full items-start">
             <div
-              className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 overflow-y-auto"
-              style={{ width: "65%", height: "53vh" }}
+              className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 overflow-y-auto mr-25"
+              style={{ width: "68%", height: "53vh" }}
             >
               <div className="space-y-4">
                 {tasksForSelectedDate.length === 0 ? (
                   <p className="text-blue-900 text-center text-xl opacity-70">
-                    No task in this schedule
+                    No task in this schedule.
                   </p>
                 ) : (
                   tasksForSelectedDate.map((task) => (
@@ -280,14 +294,12 @@ export default function SchedulePage() {
                             ? "bg-blue-50/90 border-green-600"
                             : task.overdue
                             ? "bg-blue-50/90 border-red-600"
-                            : "bg-blue-50/90 border-blue-800"}`}
-                      >
+                            : "bg-blue-50/90 border-blue-800"}`}>
                         <div className="flex items-center gap-2">
                           <p
                             className={`text-lg font-normal ${
                               task.completed || task.overdue ? "line-through" : "text-blue-900"
-                            } ${task.completed ? "text-green-600" : task.overdue ? "text-red-600" : "text-blue-900"}`}
-                          >
+                            } ${task.completed ? "text-green-600" : task.overdue ? "text-red-600" : "text-blue-900"}`}>
                             {task.text}
                           </p>
                           {task.overdue && (
@@ -317,14 +329,13 @@ export default function SchedulePage() {
                       </div>
 
                       <div className="ml-3 w-7 h-7 flex justify-center items-center">
-                        {!task.overdue && (
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => toggleComplete(task.id)}
-                            className="w-7 h-7 accent-blue-700 cursor-pointer"
-                          />
-                        )}
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => toggleComplete(task.id)}
+                          disabled={task.overdue} 
+                          className={`w-7 h-7 accent-blue-700 ${task.overdue ? "cursor-not-allowed opacity-80" : "cursor-pointer"}`}
+                        />
                       </div>
                     </div>
                   ))
@@ -332,13 +343,77 @@ export default function SchedulePage() {
               </div>
             </div>
 
-            <div className="flex items-end mx-4" style={{ height: "55vh" }}>
-              <button
-                onClick={() => openPopup()}
-                className="mb-5 w-14 h-14 rounded-full bg-[#1976D2] text-white text-5xl flex items-center justify-center border-4 border-[#03045E] shadow-xl hover:opacity-80 transition"
-              >
-                +
-              </button>
+            <div
+              className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 mt-[-108px]"
+              style={{ width: "30%", height: "64vh" }}
+            >
+              <div className="flex flex-col items-center w-full h-full">
+                <p className="text-white text-3xl font-bold mb-8 mt-6"
+                  style={{textShadow: `-2px -2px 0 #0D277B, 2px -2px 0 #0D277B, -2px  2px 0 #0D277B, 2px  2px 0 #0D277B` }}>
+                  Daily Progress
+                </p>
+
+                {(() => {
+                  const total = tasksForSelectedDate.length;
+                  const done = tasksForSelectedDate.filter(t => t.completed).length;
+                  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+                  return (
+                    <>
+                      <div className="h-10 flex items-center justify-center">
+                        {percent === 100 && (
+                          <p className="text-blue-900 font-size font-semibold animate-pulse text-center text-[20px]">
+                            Amazing, you have done all the works! 🎉
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-grow flex items-center justify-center w-full">
+                        <div className="relative w-40 h-40 flex items-center justify-center">
+                          <svg className="absolute inset-0" viewBox="0 0 36 36">
+                            <path
+                              className="text-blue-200"
+                              strokeWidth="4"
+                              stroke="currentColor"
+                              fill="none"
+                              d="
+                                M18 2
+                                a 16 16 0 1 1 0 32
+                                a 16 16 0 1 1 0 -32
+                              "
+                            />
+                          </svg>
+                          <svg
+                            className="absolute inset-0 transform -rotate-90"
+                            viewBox="0 0 36 36"
+                          >
+                            <path
+                              className="text-[#3063BA] transition-all duration-500"
+                              strokeWidth="4"
+                              stroke="currentColor"
+                              fill="none"
+                              strokeDasharray="100"
+                              strokeDashoffset={100 - percent}
+                              d="
+                                M18 2
+                                a 16 16 0 1 1 0 32
+                                a 16 16 0 1 1 0 -32
+                              "
+                            />
+                          </svg>
+                          <span className="text-blue-900 text-3xl font-bold">
+                            {percent}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full text-blue-900 text-lg space-y-2 mt-4">
+                        <p><strong>Total Tasks:</strong> {total}</p>
+                        <p><strong>Completed:</strong> {done}</p>
+                        <p><strong>Remaining:</strong> {total - done}</p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
