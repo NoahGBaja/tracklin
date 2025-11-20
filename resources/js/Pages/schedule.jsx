@@ -4,7 +4,7 @@ import "../../css/app.css";
 import { useState, useEffect } from "react";
 import Header from "../components/ui/header";
 import { PencilEdit, Trash, Logo } from "../components/ui/attributes";
-
+import { Link } from "@inertiajs/react";
 // Ambil CSRF token dari meta tag Blade
 const csrfToken =
   typeof document !== "undefined"
@@ -374,10 +374,12 @@ export default function SchedulePage({ tasks: initialTasks }) {
                 </button>
 
                 <button
-                  onClick={() => openPopup()}
+                  
                   className="absolute right-[-200px] mt-2 bg-[#1976D2] text-white text-2xl px-5 py-3 rounded-full border-3 border-[#03045E] hover:opacity-80 transition"
                 >
-                  Add New Task
+                  <Link href={'/todolist'}>
+                    Add New Task
+                  </Link>
                 </button>
               </div>
             </div>

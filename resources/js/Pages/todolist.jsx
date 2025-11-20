@@ -3,9 +3,10 @@
 import '../../css/app.css'
 import { useState } from 'react'
 import Header from '../components/ui/header'
-import { Trash, Calendar, Logo } from '../components/ui/attributes'
+import { Trash, Calendar, Logo, PencilEdit } from '../components/ui/attributes'
 import { Link } from '@inertiajs/react'
-// Ambil CSRF token dari meta tag di layout Blade
+
+// Ambil CSRF token dari meta tag
 const csrfToken =
   typeof document !== 'undefined'
     ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -16,7 +17,14 @@ export default function ToDoList({ tasks: initialTasks }) {
   const [tasks, setTasks] = useState(initialTasks || [])
   const [text, setText] = useState('')
   const [date, setDate] = useState(todayLocal())
-  const [time, setTime] = useState('') // optional, format HH.MM
+  const [time, setTime] = useState('')
+
+  // ====== POPUP STATES ======
+  const [showPopup, setShowPopup] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [popupText, setPopupText] = useState('')
+  const [popupHour, setPopupHour] = useState(null)
+  const [popupMinute, setPopupMinute] = useState(null)
 
   // ====== HELPERS ======
   function todayLocal() {
@@ -41,11 +49,7 @@ export default function ToDoList({ tasks: initialTasks }) {
       body: JSON.stringify(payload),
     })
 
-    if (!res.ok) {
-      console.error('Create task failed:', await res.text())
-      throw new Error('Failed to create task')
-    }
-
+    if (!res.ok) throw new Error(await res.text())
     return await res.json()
   }
 
@@ -60,11 +64,7 @@ export default function ToDoList({ tasks: initialTasks }) {
       body: JSON.stringify(payload),
     })
 
-    if (!res.ok) {
-      console.error('Update task failed:', await res.text())
-      throw new Error('Failed to update task')
-    }
-
+    if (!res.ok) throw new Error(await res.text())
     return await res.json()
   }
 
@@ -77,24 +77,18 @@ export default function ToDoList({ tasks: initialTasks }) {
       },
     })
 
-    if (!res.ok) {
-      console.error('Delete task failed:', await res.text())
-      throw new Error('Failed to delete task')
-    }
+    if (!res.ok) throw new Error(await res.text())
   }
 
-  // ====== HANDLERS ======
+  // ====== ACTIONS ======
 
   const handleAddTask = async () => {
-    if (!text.trim()) {
-      alert('Task cannot be empty.')
-      return
-    }
+    if (!text.trim()) return alert('Task cannot be empty.')
 
     const payload = {
       text: text.trim(),
       date: date || todayLocal(),
-      time: time ? time : null, // kirim null kalau kosong
+      time: time ? time : null,
     }
 
     try {
@@ -104,7 +98,6 @@ export default function ToDoList({ tasks: initialTasks }) {
       setDate(todayLocal())
       setTime('')
     } catch (err) {
-      console.error(err)
       alert('Failed to add task.')
     }
   }
@@ -119,7 +112,6 @@ export default function ToDoList({ tasks: initialTasks }) {
         prev.map((t) => (t.id === task.id ? updated : t))
       )
     } catch (err) {
-      console.error(err)
       alert('Failed to update task.')
     }
   }
@@ -131,16 +123,56 @@ export default function ToDoList({ tasks: initialTasks }) {
       await deleteTaskFromDB(task.id)
       setTasks((prev) => prev.filter((t) => t.id !== task.id))
     } catch (err) {
-      console.error(err)
       alert('Failed to delete task.')
     }
   }
 
-  // Filter hanya task untuk hari ini (kalau mau semua, hapus filter ini)
+  // ====== POPUP HANDLERS ======
+
+  const openPopup = (task) => {
+    setEditingTask(task)
+    setPopupText(task.text)
+
+    if (task.time) {
+      const [h, m] = task.time.split('.').map(Number)
+      setPopupHour(h)
+      setPopupMinute(m)
+    } else {
+      setPopupHour(null)
+      setPopupMinute(null)
+    }
+
+    setShowPopup(true)
+  }
+
+  const savePopup = async () => {
+    if (!popupText.trim()) return alert('Task cannot be empty!')
+
+    const formattedTime =
+      popupHour !== null && popupMinute !== null
+        ? `${pad(popupHour)}.${pad(popupMinute)}`
+        : null
+
+    try {
+      const updated = await updateTaskInDB(editingTask.id, {
+        text: popupText.trim(),
+        time: formattedTime,
+      })
+
+      setTasks((prev) =>
+        prev.map((t) => (t.id === editingTask.id ? updated : t))
+      )
+
+      setShowPopup(false)
+    } catch (err) {
+      alert('Failed to save changes.')
+    }
+  }
+
+  // ====== FILTER TODAY TASKS ======
   const today = todayLocal()
   const todayTasks = (tasks || []).filter((t) => t.date === today)
 
-  // ====== UI ======
   return (
     <div className="fixed inset-0 flex flex-col">
       <Header role="user" />
@@ -148,6 +180,7 @@ export default function ToDoList({ tasks: initialTasks }) {
       <div className="flex flex-col w-full h-full">
         <div className="flex flex-col w-full h-full justify-start items-center mt-10">
           <div className="flex flex-col w-[90%] items-center">
+
             {/* Top bar */}
             <div className="w-full flex justify-between items-center mb-4">
               <p
@@ -191,8 +224,10 @@ export default function ToDoList({ tasks: initialTasks }) {
                     className="border border-[#03045E] rounded-xl px-3 py-2 text-blue-900 bg-white/90"
                   />
                 </div>
+
                 <div className="flex items-center gap-2">
                   <span className="text-white text-lg">Time:</span>
+
                   <input
                     type="number"
                     min="0"
@@ -211,13 +246,15 @@ export default function ToDoList({ tasks: initialTasks }) {
                     }}
                     className="w-16 border border-[#03045E] rounded-xl px-2 py-1 text-blue-900 bg-white/90 text-center"
                   />
+
                   <span className="text-white text-lg">:</span>
+
                   <input
                     type="number"
                     min="0"
                     max="59"
                     placeholder="MM"
-                    value={time ? time.split('.')[1] || '' : ''}
+                    value={time ? time.split('.')[1] : ''}
                     onChange={(e) => {
                       const mm = e.target.value
                       if (mm === '') {
@@ -225,7 +262,7 @@ export default function ToDoList({ tasks: initialTasks }) {
                         return
                       }
                       const num = Math.min(59, Math.max(0, Number(mm)))
-                      const hh = time ? time.split('.')[0] || '00' : '00'
+                      const hh = time ? time.split('.')[0] : '00'
                       setTime(`${hh}.${pad(num)}`)
                     }}
                     className="w-16 border border-[#03045E] rounded-xl px-2 py-1 text-blue-900 bg-white/90 text-center"
@@ -233,17 +270,19 @@ export default function ToDoList({ tasks: initialTasks }) {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={handleAddTask}
-                  className="bg-[#1976D2] text-white px-5 py-3 rounded-full text-xl border-3 border-[#03045E] hover:opacity-80 transition"
-                >
-                  Add Task
-                </button>
-              </div>
-              <div className="flex gap-3">
-                <Link href="/schedule" className="bg-[#78B3F0] text-white px-5 py-3 rounded-full text-xl border-3 border-[#03045E] hover:opacity-80 transition">See Schedule</Link>
-              </div>
+              <button
+                onClick={handleAddTask}
+                className="bg-[#1976D2] text-white px-5 py-3 rounded-full text-xl border-3 border-[#03045E] hover:opacity-80 transition"
+              >
+                Add Task
+              </button>
+
+              <Link
+                href="/schedule"
+                className="bg-[#78B3F0] text-white px-5 py-3 rounded-full text-xl border-3 border-[#03045E] hover:opacity-80 transition"
+              >
+                See Schedule
+              </Link>
             </div>
 
             {/* Task list */}
@@ -268,6 +307,7 @@ export default function ToDoList({ tasks: initialTasks }) {
                         onChange={() => handleToggleComplete(task)}
                         className="w-5 h-5 accent-blue-700"
                       />
+
                       <div className="flex flex-col">
                         <p
                           className={`text-xl ${
@@ -278,21 +318,31 @@ export default function ToDoList({ tasks: initialTasks }) {
                         >
                           {task.text}
                         </p>
+
                         <p className="text-base text-blue-800 opacity-70">
-                          Due:{' '}
-                          {task.time
-                            ? `${task.date} • ${task.time}`
-                            : task.date || 'Anytime'}
+                          Due: {task.time ? `${task.date} • ${task.time}` : task.date}
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDelete(task)}
-                      className="hover:opacity-70 transition text-red-600"
-                    >
-                      <Trash size={2} />
-                    </button>
+                    <div className="flex gap-3 opacity-100">
+                      {/* EDIT BUTTON */}
+                      <button
+                        onClick={() => openPopup(task)}
+                        className="hover:opacity-70 text-blue-600"
+                      >
+                        <PencilEdit size={2} />
+                      </button>
+
+
+                      {/* DELETE BUTTON */}
+                      <button
+                        onClick={() => handleDelete(task)}
+                        className="hover:opacity-70 transition text-red-600"
+                      >
+                        <Trash size={2} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -300,6 +350,67 @@ export default function ToDoList({ tasks: initialTasks }) {
           </div>
         </div>
       </div>
+
+      {/* ======================= POPUP MODAL ======================= */}
+      {showPopup && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
+          <div className="bg-[#0D47A1] border-4 border-[#1646A9] text-blue-900 p-6 rounded-2xl shadow-xl w-[90%] max-w-md">
+
+            <h2 className="text-white text-2xl font-bold mb-4">
+              Edit Task ✏️
+            </h2>
+
+            <label className="text-white block text-lg mb-1">Task:</label>
+            <input
+              type="text"
+              value={popupText}
+              onChange={(e) => setPopupText(e.target.value)}
+              className="w-full border border-blue-400 bg-white rounded-xl p-2 mb-4"
+            />
+
+            <label className="text-white block text-lg mb-1">Time:</label>
+            <div className="flex justify-between gap-2 mb-6">
+              <input
+                type="number"
+                value={popupHour ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setPopupHour(v === "" ? null : Math.min(23, Math.max(0, Number(v))))
+                }}
+                placeholder="HH"
+                className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"
+              />
+
+              <input
+                type="number"
+                value={popupMinute ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setPopupMinute(v === "" ? null : Math.min(59, Math.max(0, Number(v))))
+                }}
+                placeholder="MM"
+                className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="bg-[#1646A9] text-white border-2 px-4 py-2 rounded-xl hover:opacity-70"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={savePopup}
+                className="bg-[#1976D2] text-white border-2 px-4 py-2 rounded-xl hover:opacity-70"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
