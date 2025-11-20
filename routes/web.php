@@ -15,6 +15,7 @@ $pages = [
     '/schedule',
     '/forgot-password',
     '/verify-otp',
+    '/timer'
 ];
 
 $items = array_map(function($page){
@@ -43,8 +44,8 @@ Route::get('/forgot-password', function () {
     return Inertia::render('forgotpassword');
 })->name('password.request');
 
-Route::get('/timer', function () {
-    // Pastikan nama komponen ini sesuai dengan file Timer.jsx Anda
-    return Inertia::render('Timer');
-})->name('timer');
+// Route::get('/timer', function () {
+//     // Pastikan nama komponen ini sesuai dengan file Timer.jsx Anda
+//     return Inertia::render('Timer');
+// })->name('timer');
 
