@@ -3,15 +3,20 @@ import '../../css/app.css';
 import { useState, useEffect } from 'react';
 import Header from '../components/ui/header';
 import { motion } from 'framer-motion';
-import { Link } from '@inertiajs/react'
+import { Link, usePage } from '@inertiajs/react'
 import { Note, SignIn, LearnMore, PersonalComputer, Pencil, Book, Clock } from '../components/ui/attributes';
+import { truncate } from '@/lib/utils';
+
 export default function Home() {
     const [toDo,setToDo] = useState(false)
     const [clock,setClock] = useState(false)
-    const [roles, setRole] = useState(false)
-    // const [showProfile, setShowProfile] = useState(false)
 
-    const role = roles?'user':'guest' 
+    const { props } = usePage();
+    const auth = props?.auth ?? {};
+    const user = auth?.user ?? null;
+    const username = truncate(user?.name) ?? 'Guest';
+    
+    const role = user ? 'user' : 'guest' 
     const size = {sizeAll:2, sizePencil:3};
   return (
     <div className="fixed inset-0 flex flex-col">
@@ -24,9 +29,8 @@ export default function Home() {
         <div className='flex flex-row w-[100%] h-[15%]'>
           <div className='flex justify-center items-center w-[20%] h-full'>
             <button
-            onClick={()=>setRole(!roles)}
-             className='cursor-pointer outline-blue-600 ring-white ring-4 active:scale-90 active:opacity-100 duration-75 ease-in-out hover:opacity-70 bg-blue-700/80 outline-2 w-[100px] text-white text-xl h-[50px] rounded-2xl'>
-              {role}
+             className='outline-blue-600 ring-white ring-4 active:scale-90 active:opacity-100 duration-75 ease-in-out hover:opacity-70 bg-blue-700/80 outline-2 w-[100px] text-white text-xl h-[50px] rounded-2xl'>
+              {username}
             </button>          
           </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import { Logo } from '../components/ui/attributes';
 
 export default function Login() {
@@ -18,8 +18,10 @@ export default function Login() {
     
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Logging in with:", formData);
-        // later you’ll send this to your backend API using axios/fetch or Inertia.post()
+        router.post('/login', {
+            login: formData.username,
+            password: formData.password,
+        });
     };
 
     return (
