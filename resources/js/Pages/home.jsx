@@ -133,7 +133,7 @@ export default function Home() {
                             To-Do List 
                         </p>
                       </Link>
-                      <div className="flex flex-col w-[50%] items-center justify-baseline h-full gap-6">
+                      <Link href={'/schedule'} className="flex flex-col w-[50%] items-center justify-baseline h-full gap-6">
                         <motion.div
                         initial={{opacity:0}}
                         animate={{opacity:1}}
@@ -149,7 +149,7 @@ export default function Home() {
                         <p className="text-4xl">
                             Set Alarm
                         </p>
-                    </div>
+                      </Link>
                     </> 
                   )
                 }

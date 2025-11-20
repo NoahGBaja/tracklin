@@ -1,5 +1,6 @@
 import { motion } from "framer-motion"
 import { useState } from "react"
+import { Link } from '@inertiajs/react'
 import { Pencil, Book, Clock } from "../components/ui/attributes"
 export default function Features(){
     const [toDo,setToDo] = useState(false)
@@ -23,7 +24,7 @@ export default function Features(){
                     </motion.h1>
                 </motion.div>
                 <div className="w-[80%] h-[70%] justify-center items-center flex p-4 text-white [-webkit-text-stroke:0.4px_black] [text-shadow:_4px_4px_0_#000] text-2xl  rounded-2xl">
-                    <div className="flex flex-col w-[50%] items-center justify-center h-full gap-6">
+                    <Link href='/todolist' className="flex flex-col w-[50%] items-center justify-center h-full gap-6">
                         <motion.div
                         initial={{opacity:0}}
                         animate={{opacity:1}}
@@ -39,8 +40,8 @@ export default function Features(){
                         <p className="text-4xl">
                             To-Do List 
                         </p>
-                    </div>
-                    <div className="flex flex-col w-[50%] items-center justify-center h-full gap-6">
+                    </Link>
+                    <Link href='/todolist' className="flex flex-col w-[50%] items-center justify-center h-full gap-6">
                         <motion.div
                         initial={{opacity:0}}
                         animate={{opacity:1}}
@@ -55,7 +56,7 @@ export default function Features(){
                         <p className="text-4xl">
                             Set Alarm
                         </p>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </div>
