@@ -36,7 +36,6 @@ export default function ToDoList() {
   const [editMinute,setEditMinute] = useState(null)
   const [showEditPopup,setShowEditPopup] = useState(false)
 
-  // ---------- SYNC LOCALSTORAGE ----------
   useEffect(() => { localStorage.setItem('tasks', JSON.stringify(tasks)) }, [tasks])
 
   const validateAndBuildTask = ({text,dateStr,hour,minute,now=new Date()}) => {
@@ -175,7 +174,7 @@ export default function ToDoList() {
                         checked={task.completed}
                         onChange={() => setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, completed: !t.completed, overdue: false } : t))}
                         disabled={task.overdue}
-                        className={`w-5 h-5 accent-blue-700 ${task.overdue ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-5 h-5 accent-blue-700 ${task.overdue ? 'opacity-80 cursor-not-allowed' : ''}`}
                       />
                       <div className="flex flex-col">
                         <p className={`text-xl transition-all duration-200 ${task.completed ? 'text-green-600 line-through' : task.overdue ? 'text-gray-500 line-through' : 'text-blue-700'}`}>{task.text}</p>

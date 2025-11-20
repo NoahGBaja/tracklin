@@ -5,7 +5,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-$pages = ['/', '/about', '/features', '/test','todolist','schedule'];
+
+$pages = ['/', '/about', '/features', '/test','/login','/register','todolist','schedule', '/Timer', '/forgot-password', '/verify-otp', '/home', 'todolist','schedule'];
 
 $items = array_map(function($page){
     return ($name= ltrim($page, '/')) === '' ?
@@ -21,6 +22,7 @@ foreach ($associate as $item) {
     // print_r($item['file']);
 }
 
+
 Route::post('/register', [RegisterController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/logout', [AuthenticatedSessionController::class,'destroy'])->name('logout');
@@ -32,3 +34,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/todolist', fn () => Inertia::render('todolist'));
     Route::get('/schedule', fn () => Inertia::render('schedule'));
 });
+Route::get('/forgot-password', function () {
+    return Inertia::render('forgotpassword');
+})->name('password.request');
+
+Route::get('/timer', function () {
+    return Inertia::render('Timer');
+})->name('timer');
