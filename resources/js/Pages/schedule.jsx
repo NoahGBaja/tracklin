@@ -3,17 +3,20 @@
 import "../../css/app.css";
 import { useState, useEffect } from "react";
 import Header from "../components/ui/header";
-import { Link } from "@inertiajs/react";
-import { PencilEdit, Trash, Logo, TimeClock, CalendarImage } from "../components/ui/attributes";
+import { PencilEdit, Trash, Logo } from "../components/ui/attributes";
 
-export default function SchedulePage() {
+// Ambil CSRF token dari meta tag Blade
+const csrfToken =
+  typeof document !== "undefined"
+    ? document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
+    : null;
+
+export default function SchedulePage({ tasks: initialTasks }) {
   const today = new Date();
   const pad = (n) => String(n).padStart(2, "0");
 
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("tasks");
-    return saved ? JSON.parse(saved) : [];
-  });
+  // ================== STATE ==================
+  const [tasks, setTasks] = useState(initialTasks || []);
 
   const [startDate, setStartDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
@@ -23,15 +26,68 @@ export default function SchedulePage() {
   const [popupText, setPopupText] = useState("");
   const [popupHour, setPopupHour] = useState(null);
   const [popupMinute, setPopupMinute] = useState(null);
-  const [tempHour, setTempHour] = useState(today.getHours());
-  const [tempMinute, setTempMinute] = useState(today.getMinutes());
 
   const [editingTask, setEditingTask] = useState(null);
-  
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(today);
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  // ================== BACKEND HELPERS ==================
+  const addTaskToDB = async (payload) => {
+    const res = await fetch("/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-CSRF-TOKEN": csrfToken,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.error("Create task failed:", await res.text());
+      throw new Error("Failed to create task");
+    }
+
+    return await res.json();
+  };
+
+  const updateTaskInDB = async (id, payload) => {
+    const res = await fetch(`/tasks/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-CSRF-TOKEN": csrfToken,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.error("Update task failed:", await res.text());
+      throw new Error("Failed to update task");
+    }
+
+    return await res.json();
+  };
+
+  const deleteTaskFromDB = async (id) => {
+    const res = await fetch(`/tasks/${id}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "X-CSRF-TOKEN": csrfToken,
+      },
+    });
+
+    if (!res.ok) {
+      console.error("Delete task failed:", await res.text());
+      throw new Error("Failed to delete task");
+    }
+  };
+
+  // ================== WEEK NAVIGATION ==================
   const getWeekDates = (refDate) => {
     const weekDates = [];
     const startOfWeek = new Date(refDate);
@@ -51,6 +107,7 @@ export default function SchedulePage() {
     const newStart = new Date(startDate);
     newStart.setDate(startDate.getDate() - 7);
     setStartDate(newStart);
+
     const newSelected = new Date(selectedDate);
     newSelected.setDate(selectedDate.getDate() - 7);
     setSelectedDate(newSelected);
@@ -60,33 +117,39 @@ export default function SchedulePage() {
     const newStart = new Date(startDate);
     newStart.setDate(startDate.getDate() + 7);
     setStartDate(newStart);
+
     const newSelected = new Date(selectedDate);
     newSelected.setDate(selectedDate.getDate() + 7);
     setSelectedDate(newSelected);
   };
 
+  // ================== FILTER TASKS UNTUK TANGGAL TERPILIH ==================
   useEffect(() => {
-    const selectedDateStr = `${selectedDate.getFullYear()}-${String(
+    const selectedDateStr = `${selectedDate.getFullYear()}-${pad(
       selectedDate.getMonth() + 1
-    ).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+    )}-${pad(selectedDate.getDate())}`;
 
-    const filtered = tasks
+    const filtered = (tasks || [])
       .filter((t) => t.date === selectedDateStr)
       .sort((a, b) => {
         if (!a.time && !b.time) return 0;
         if (!a.time) return -1;
         if (!b.time) return 1;
-        return parseInt(a.time.replace(".", ""), 10) - parseInt(b.time.replace(".", ""), 10);
+        return (
+          parseInt(a.time.replace(".", ""), 10) -
+          parseInt(b.time.replace(".", ""), 10)
+        );
       });
 
     setTasksForSelectedDate(filtered);
   }, [selectedDate, tasks]);
 
+  // ================== OVERDUE CHECK (UI ONLY) ==================
   useEffect(() => {
     const checkOverdue = () => {
       const now = new Date();
       setTasks((prev) =>
-        prev.map((task) => {
+        (prev || []).map((task) => {
           if (task.completed) return { ...task, overdue: false };
           if (!task.date) return { ...task, overdue: false };
           const dt = new Date(task.date);
@@ -103,20 +166,32 @@ export default function SchedulePage() {
     return () => clearInterval(id);
   }, []);
 
-  const toggleComplete = (id) => {
-    const updated = tasks.map((t) =>
-      t.id === id ? { ...t, completed: !t.completed } : t
-    );
-    setTasks(updated);
-    localStorage.setItem("tasks", JSON.stringify(updated));
+  // ================== ACTIONS ==================
+  const toggleComplete = async (id) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+
+    try {
+      const updated = await updateTaskInDB(id, {
+        completed: !current.completed,
+      });
+
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? updated : t))
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update task.");
+    }
   };
 
   const openPopup = (task = null) => {
-    const now = new Date();
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
 
-    if (!task && selectedDate < new Date(today.setHours(0, 0, 0, 0))) {
+    if (!task && selectedDate < todayMidnight) {
       alert("You cannot add task to a past date");
-      return; 
+      return;
     }
 
     if (task) {
@@ -126,32 +201,25 @@ export default function SchedulePage() {
         const [h, m] = task.time.split(".").map(Number);
         setPopupHour(h);
         setPopupMinute(m);
-        setTempHour(h);
-        setTempMinute(m);
       } else {
         setPopupHour(null);
         setPopupMinute(null);
-        setTempHour(today.getHours());
-        setTempMinute(today.getMinutes());
       }
     } else {
       setEditingTask(null);
       setPopupText("");
       setPopupHour(null);
       setPopupMinute(null);
-      setTempHour(today.getHours());
-      setTempMinute(today.getMinutes());
     }
     setShowPopup(true);
   };
 
-
-  const savePopup = () => {
+  const savePopup = async () => {
     if (!popupText.trim()) return alert("Task cannot be empty!");
 
-    const selectedDateStr = `${selectedDate.getFullYear()}-${String(
+    const selectedDateStr = `${selectedDate.getFullYear()}-${pad(
       selectedDate.getMonth() + 1
-    ).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+    )}-${pad(selectedDate.getDate())}`;
 
     const now = new Date();
     if (
@@ -161,38 +229,57 @@ export default function SchedulePage() {
     ) {
       const chosen = new Date(selectedDate);
       chosen.setHours(popupHour, popupMinute, 0, 0);
-      if (chosen <= now) return alert("⛔ Cannot set time in the past for today!");
+      if (chosen <= now)
+        return alert("⛔ Cannot set time in the past for today!");
     }
 
     const formattedTime =
       popupHour !== null && popupMinute !== null
         ? `${pad(popupHour)}.${pad(popupMinute)}`
-        : "";
+        : null;
 
-    if (editingTask) {
-      const updated = tasks.map((t) =>
-        t.id === editingTask.id
-          ? { ...t, text: popupText, time: formattedTime }
-          : t
-      );
-      setTasks(updated);
-      localStorage.setItem("tasks", JSON.stringify(updated));
-    } else {
-      const newTask = {
-        id: Date.now(),
-        text: popupText,
-        date: selectedDateStr,
-        time: formattedTime,
-        completed: false,
-        overdue: false,
-      };
-      setTasks((prev) => [...prev, newTask]);
-      localStorage.setItem("tasks", JSON.stringify([...tasks, newTask]));
+    try {
+      if (editingTask) {
+        // update task existing
+        const updated = await updateTaskInDB(editingTask.id, {
+          text: popupText.trim(),
+          time: formattedTime,
+        });
+
+        setTasks((prev) =>
+          prev.map((t) => (t.id === editingTask.id ? updated : t))
+        );
+      } else {
+        // create task baru
+        const created = await addTaskToDB({
+          text: popupText.trim(),
+          date: selectedDateStr,
+          time: formattedTime,
+        });
+
+        setTasks((prev) => [...prev, created]);
+      }
+
+      setShowPopup(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save task.");
     }
-
-    setShowPopup(false);
   };
 
+  const handleDelete = async (task) => {
+    if (!confirm("Delete this task?")) return;
+
+    try {
+      await deleteTaskFromDB(task.id);
+      setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete task.");
+    }
+  };
+
+  // ================== UI ==================
   return (
     <div className="fixed inset-0 flex flex-col">
       <Header role="user" />
@@ -200,7 +287,10 @@ export default function SchedulePage() {
       <div className="flex flex-col w-full h-full justify-start items-center mt-10">
         <div className="flex flex-col w-[90%] items-center">
           <div className="w-full flex justify-between items-center mb-4">
-            <p onClick={() => window.history.back()} className="text-white text-6xl font-bold cursor-pointer hover:opacity-80">
+            <p
+              onClick={() => window.history.back()}
+              className="text-white text-6xl font-bold cursor-pointer hover:opacity-80"
+            >
               ‹ back
             </p>
             <div className="scale-90 mt-5">
@@ -210,24 +300,42 @@ export default function SchedulePage() {
 
           <div className="w-full flex justify-start mb-5 -mt-5">
             <div className="relative w-[50%]">
-              <p className="absolute -top-10 left-4 text-white text-2xl font-bold"
-                style={{ textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`}}>
+              <p
+                className="absolute -top-10 left-4 text-white text-2xl font-bold"
+                style={{
+                  textShadow:
+                    `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`,
+                }}
+              >
                 Your schedule
               </p>
-              <p className="absolute -top-10 right-4 text-white text-2xl font-bold cursor-pointer hover:text-blue-300 transition-colors duration-200"
-                style={{textShadow: `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`}}
-                onClick={() => setShowCalendar(true)}>
-                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              <p
+                className="absolute -top-10 right-4 text-white text-2xl font-bold cursor-pointer hover:text-blue-300 transition-colors duration-200"
+                style={{
+                  textShadow:
+                    `-2.5px -2.5px 0 #0D277B, 2.5px -2.5px 0 #0D277B, -2.5px  2.5px 0 #0D277B, 2.5px  2.5px 0 #0D277B`,
+                }}
+                onClick={() => setShowCalendar(true)}
+              >
+                {selectedDate.toLocaleString("default", {
+                  month: "long",
+                  year: "numeric",
+                })}
               </p>
 
               <div className="pl-12 pr-12 py-3 rounded-full border border-[#03045E] w-full bg-white/90 font-light flex items-center justify-between relative">
-                <button onClick={goPrev} className="px-2 text-3xl hover:opacity-50">
+                <button
+                  onClick={goPrev}
+                  className="px-2 text-3xl hover:opacity-50"
+                >
                   ‹
                 </button>
+
                 <div className="flex gap-10 text-center">
                   {weekDates.map((d, i) => {
                     const isToday = d.toDateString() === today.toDateString();
-                    const isSelected = d.toDateString() === selectedDate.toDateString();
+                    const isSelected =
+                      d.toDateString() === selectedDate.toDateString();
                     const blue = isToday || isSelected;
                     return (
                       <div
@@ -257,10 +365,15 @@ export default function SchedulePage() {
                     );
                   })}
                 </div>
-                <button onClick={goNext} className="px-2 text-3xl hover:opacity-50">
+
+                <button
+                  onClick={goNext}
+                  className="px-2 text-3xl hover:opacity-50"
+                >
                   ›
                 </button>
-                  <button
+
+                <button
                   onClick={() => openPopup()}
                   className="absolute right-[-200px] mt-2 bg-[#1976D2] text-white text-2xl px-5 py-3 rounded-full border-3 border-[#03045E] hover:opacity-80 transition"
                 >
@@ -271,6 +384,7 @@ export default function SchedulePage() {
           </div>
 
           <div className="flex w-full items-start">
+            {/* Task list */}
             <div
               className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 overflow-y-auto mr-25"
               style={{ width: "68%", height: "53vh" }}
@@ -282,28 +396,46 @@ export default function SchedulePage() {
                   </p>
                 ) : (
                   tasksForSelectedDate.map((task) => (
-                    <div key={task.id} className="flex items-center group relative min-h-[60px]">
+                    <div
+                      key={task.id}
+                      className="flex items-center group relative min-h-[60px]"
+                    >
                       <div className="flex flex-col items-center justify-center mr-3">
                         <span className="text-blue-900 text-lg font-normal w-12 text-center">
                           {task.time || "-"}
                         </span>
                       </div>
+
                       <div
                         className={`border-l-8 rounded-r-2xl shadow-md p-3 flex-grow flex justify-between items-center relative
-                          ${task.completed
-                            ? "bg-blue-50/90 border-green-600"
-                            : task.overdue
-                            ? "bg-blue-50/90 border-red-600"
-                            : "bg-blue-50/90 border-blue-800"}`}>
+                          ${
+                            task.completed
+                              ? "bg-blue-50/90 border-green-600"
+                              : task.overdue
+                              ? "bg-blue-50/90 border-red-600"
+                              : "bg-blue-50/90 border-blue-800"
+                          }`}
+                      >
                         <div className="flex items-center gap-2">
                           <p
                             className={`text-lg font-normal ${
-                              task.completed || task.overdue ? "line-through" : "text-blue-900"
-                            } ${task.completed ? "text-green-600" : task.overdue ? "text-red-600" : "text-blue-900"}`}>
+                              task.completed || task.overdue
+                                ? "line-through"
+                                : "text-blue-900"
+                            } ${
+                              task.completed
+                                ? "text-green-600"
+                                : task.overdue
+                                ? "text-red-600"
+                                : "text-blue-900"
+                            }`}
+                          >
                             {task.text}
                           </p>
                           {task.overdue && (
-                            <span className="text-red-600 font-normal">— Unfinished Task ❌</span>
+                            <span className="text-red-600 font-normal">
+                              — Unfinished Task ❌
+                            </span>
                           )}
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
@@ -316,11 +448,7 @@ export default function SchedulePage() {
                             </button>
                           )}
                           <button
-                            onClick={() => {
-                              const updated = tasks.filter((t) => t.id !== task.id);
-                              setTasks(updated);
-                              localStorage.setItem("tasks", JSON.stringify(updated));
-                            }}
+                            onClick={() => handleDelete(task)}
                             className="hover:opacity-70 text-red-600"
                           >
                             <Trash size={2} />
@@ -331,10 +459,14 @@ export default function SchedulePage() {
                       <div className="ml-3 w-7 h-7 flex justify-center items-center">
                         <input
                           type="checkbox"
-                          checked={task.completed}
+                          checked={!!task.completed}
                           onChange={() => toggleComplete(task.id)}
-                          disabled={task.overdue} 
-                          className={`w-7 h-7 accent-blue-700 ${task.overdue ? "cursor-not-allowed opacity-80" : "cursor-pointer"}`}
+                          disabled={task.overdue}
+                          className={`w-7 h-7 accent-blue-700 ${
+                            task.overdue
+                              ? "cursor-not-allowed opacity-80"
+                              : "cursor-pointer"
+                          }`}
                         />
                       </div>
                     </div>
@@ -343,20 +475,29 @@ export default function SchedulePage() {
               </div>
             </div>
 
+            {/* Daily Progress */}
             <div
               className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 mt-[-108px]"
               style={{ width: "30%", height: "64vh" }}
             >
               <div className="flex flex-col items-center w-full h-full">
-                <p className="text-white text-3xl font-bold mb-8 mt-6"
-                  style={{textShadow: `-2px -2px 0 #0D277B, 2px -2px 0 #0D277B, -2px  2px 0 #0D277B, 2px  2px 0 #0D277B` }}>
+                <p
+                  className="text-white text-3xl font-bold mb-8 mt-6"
+                  style={{
+                    textShadow:
+                      `-2px -2px 0 #0D277B, 2px -2px 0 #0D277B, -2px  2px 0 #0D277B, 2px  2px 0 #0D277B`,
+                  }}
+                >
                   Daily Progress
                 </p>
 
                 {(() => {
                   const total = tasksForSelectedDate.length;
-                  const done = tasksForSelectedDate.filter(t => t.completed).length;
-                  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+                  const done = tasksForSelectedDate.filter(
+                    (t) => t.completed
+                  ).length;
+                  const percent =
+                    total === 0 ? 0 : Math.round((done / total) * 100);
 
                   return (
                     <>
@@ -369,7 +510,10 @@ export default function SchedulePage() {
                       </div>
                       <div className="flex-grow flex items-center justify-center w-full">
                         <div className="relative w-40 h-40 flex items-center justify-center">
-                          <svg className="absolute inset-0" viewBox="0 0 36 36">
+                          <svg
+                            className="absolute inset-0"
+                            viewBox="0 0 36 36"
+                          >
                             <path
                               className="text-blue-200"
                               strokeWidth="4"
@@ -406,9 +550,15 @@ export default function SchedulePage() {
                         </div>
                       </div>
                       <div className="w-full text-blue-900 text-lg space-y-2 mt-4">
-                        <p><strong>Total Tasks:</strong> {total}</p>
-                        <p><strong>Completed:</strong> {done}</p>
-                        <p><strong>Remaining:</strong> {total - done}</p>
+                        <p>
+                          <strong>Total Tasks:</strong> {total}
+                        </p>
+                        <p>
+                          <strong>Completed:</strong> {done}
+                        </p>
+                        <p>
+                          <strong>Remaining:</strong> {total - done}
+                        </p>
                       </div>
                     </>
                   );
@@ -419,6 +569,7 @@ export default function SchedulePage() {
         </div>
       </div>
 
+      {/* Calendar popup */}
       {showCalendar && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
           <div className="bg-white border-4 text-[#0D47A1] p-4 rounded-2xl shadow-xl w-[400px]">
@@ -434,7 +585,9 @@ export default function SchedulePage() {
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i} value={i}>
-                    {new Date(0, i).toLocaleString("default", { month: "long" })}
+                    {new Date(0, i).toLocaleString("default", {
+                      month: "long",
+                    })}
                   </option>
                 ))}
               </select>
@@ -458,31 +611,58 @@ export default function SchedulePage() {
                 })}
               </select>
             </div>
+
             <div className="grid grid-cols-7 gap-1 mb-4">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="text-center font-bold">{d}</div>
+                <div key={d} className="text-center font-bold">
+                  {d}
+                </div>
               ))}
 
-              {Array.from({ length: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay() }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
+              {Array.from(
+                {
+                  length: new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth(),
+                    1
+                  ).getDay(),
+                },
+                (_, i) => (
+                  <div key={`empty-${i}`} />
+                )
+              )}
 
-              {Array.from({ length: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate() }, (_, i) => {
-                const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), i + 1);
-                const isSelected = date.toDateString() === calendarMonth.toDateString();
-                return (
-                  <div
-                    key={i}
-                    className={`text-center cursor-pointer hover:bg-blue-200 rounded ${
-                      isSelected ? "bg-blue-300 font-bold" : ""
-                    }`}
-                    onClick={() => setCalendarMonth(date)}
-                  >
-                    {i + 1}
-                  </div>
-                );
-              })}
+              {Array.from(
+                {
+                  length: new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth() + 1,
+                    0
+                  ).getDate(),
+                },
+                (_, i) => {
+                  const date = new Date(
+                    calendarMonth.getFullYear(),
+                    calendarMonth.getMonth(),
+                    i + 1
+                  );
+                  const isSelected =
+                    date.toDateString() === calendarMonth.toDateString();
+                  return (
+                    <div
+                      key={i}
+                      className={`text-center cursor-pointer hover:bg-blue-200 rounded ${
+                        isSelected ? "bg-blue-300 font-bold" : ""
+                      }`}
+                      onClick={() => setCalendarMonth(date)}
+                    >
+                      {i + 1}
+                    </div>
+                  );
+                }
+              )}
             </div>
+
             <div className="flex justify-end gap-2">
               <button
                 className="bg-[#1646A9] text-white border-2 px-4 py-2 rounded-xl hover:opacity-70 mr-3"
@@ -505,13 +685,16 @@ export default function SchedulePage() {
         </div>
       )}
 
+      {/* Add/Edit popup */}
       {showPopup && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
           <div className="bg-[#0D47A1] border-4 border-[#1646A9] text-blue-900 p-6 rounded-2xl shadow-xl w-[90%] max-w-md">
             <h2 className="text-white text-2xl font-bold mb-4">
               {editingTask ? "Edit Task ✏️" : "Add Task ➕"}
             </h2>
-            <label className="text-white block text-lg mb-1">Enter Task:</label>
+            <label className="text-white block text-lg mb-1">
+              Enter Task:
+            </label>
             <input
               type="text"
               value={popupText}
@@ -526,7 +709,9 @@ export default function SchedulePage() {
                 value={popupHour ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setPopupHour(val === "" ? null : Math.min(23, Math.max(0, Number(val))));
+                  setPopupHour(
+                    val === "" ? null : Math.min(23, Math.max(0, Number(val)))
+                  );
                 }}
                 placeholder="HH"
                 className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"
@@ -536,7 +721,9 @@ export default function SchedulePage() {
                 value={popupMinute ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setPopupMinute(val === "" ? null : Math.min(59, Math.max(0, Number(val))));
+                  setPopupMinute(
+                    val === "" ? null : Math.min(59, Math.max(0, Number(val)))
+                  );
                 }}
                 placeholder="MM"
                 className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"

@@ -4,35 +4,43 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\TaskController;
 
+/*
+|--------------------------------------------------------------------------
+| Static Pages (Auto Mapped)
+|--------------------------------------------------------------------------
+| Halaman biasa yang tidak butuh controller.
+| Dibuat dalam bentuk array agar mudah di-manage.
+*/
 
-$pages = [
+$staticPages = [
     '/',
     '/about',
     '/features',
     '/test',
-    '/todolist',
-    '/schedule',
     '/forgot-password',
     '/verify-otp',
     '/timer'
 ];
 
-$items = array_map(function($page){
-    return ($name= ltrim($page, '/')) === '' ?
-     'home' : $name;
-},$pages);
+$items = array_map(function ($page) {
+    return ($name = ltrim($page, '/')) === '' ? 'home' : $name;
+}, $staticPages);
 
-
-$associate = array_map(function($a, $b){
-    return ['page'=>$a, 'file'=>$b];
-},$pages,$items);
+$associate = array_map(function ($a, $b) {
+    return ['page' => $a, 'file' => $b];
+}, $staticPages, $items);
 
 foreach ($associate as $item) {
-    Route::get($item['page'],fn()=> Inertia::render($item['file']));
+    Route::get($item['page'], fn () => Inertia::render($item['file']));
 }
 
-
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+*/
 Route::post('/register', [RegisterController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -44,8 +52,22 @@ Route::get('/forgot-password', function () {
     return Inertia::render('forgotpassword');
 })->name('password.request');
 
-// Route::get('/timer', function () {
-//     // Pastikan nama komponen ini sesuai dengan file Timer.jsx Anda
-//     return Inertia::render('Timer');
-// })->name('timer');
+/*
+|--------------------------------------------------------------------------
+| To-Do List + Tasks DB Routes
+|--------------------------------------------------------------------------
+| INI BAGIAN PENTING:
+| todolist harus pakai controller agar data tasks bisa dikirim ke React
+*/
+Route::middleware(['auth'])->group(function () {
+
+    // PAGE todolist — mengambil tasks dari DB
+    Route::get('/todolist', [TaskController::class, 'index'])->name('todolist');
+     Route::get('/schedule', [TaskController::class, 'schedule'])->name('schedule');
+
+    // API endpoints
+    Route::post('/tasks', [TaskController::class, 'store']);
+    Route::put('/tasks/{task}', [TaskController::class, 'update']);
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
+});
 
