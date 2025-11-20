@@ -11,16 +11,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            'login' => ['required', 'string'],
             'password'=> ['required','string'],
         ];
-    }
-
-    public function authenticated(): void {
-        if (! Auth::attempt($this->only('email', 'password'))) {
-            throw ValidationException::withMessages([
-                'email'=> __('auth.failed'),
-            ]);
-        }
     }
 }
