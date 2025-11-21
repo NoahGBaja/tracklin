@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Link, router } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import { Logo } from '../components/ui/attributes';
 
 export default function Login() {
+    const { errors } = usePage().props;
     const [formData, setFormData] = useState({
         username: "",
         password: "",
@@ -55,7 +56,11 @@ export default function Login() {
                             className="p-3 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-blue-400 w-full mb-28"
                             required
                         />                
-
+                        {errors.login && (
+                            <p className="text-red-500 mt-1">
+                                {errors.login}
+                            </p>
+                        )}
                         <div className="flex flex-col items-start text-sm text-[#0026A4] mt-2">
                             <div className="flex items-center gap-2">
                                 <p className="mb-3">Don’t have an account?</p>

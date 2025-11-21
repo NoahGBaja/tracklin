@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Link, router } from "@inertiajs/react"; 
+import { Link, router, usePage } from "@inertiajs/react"; 
 import { Logo } from '../components/ui/attributes';
 
 
 export default function Register() {
+    const { errors } = usePage().props;
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -18,11 +19,6 @@ export default function Register() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        if (formData.password != formData.ReenterPassword) {
-            alert("Password does not match");
-            return;
-        }
         router.post('/register', {
             name: formData.username,
             email: formData.email,
@@ -54,6 +50,11 @@ export default function Register() {
                             className="p-3 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-blue-400 w-full"
                             required
                         />
+                        {errors.name && (
+                            <p className="text-red-500 mt-1">
+                                {errors.name}
+                            </p>
+                        )}
                         
                         <input
                             type="email"
@@ -64,6 +65,11 @@ export default function Register() {
                             className="p-3 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-blue-400 w-full"
                             required
                         />
+                        {errors.email && (
+                            <p className="text-red-500 mt-1">
+                                {errors.email}
+                            </p>
+                        )}
                         
                         <input
                             type="password"
@@ -74,6 +80,11 @@ export default function Register() {
                             className="p-3 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-blue-400 w-full"
                             required
                         />
+                        {errors.password && (
+                            <p className="text-red-500 mt-1">
+                                {errors.password}
+                            </p>
+                        )}
                         
                         <input
                             type="password"
@@ -84,6 +95,11 @@ export default function Register() {
                             className="p-3 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-blue-400 w-full"
                             required
                         />
+                        {(formData.password != formData.ReenterPassword) && (
+                            <p className="text-red-500 mt-1">
+                                "Password Need to match!"
+                            </p>
+                        )}
                         
                         <div className="flex justify-left text-sm text-[#0026A4] mt-2">
                             <p>Already have an account?</p>

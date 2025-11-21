@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -19,8 +20,8 @@ class AuthenticatedSessionController extends Controller
         $field = $isEmail ? 'email' : 'name';
 
         if (!Auth::attempt([$field => $login, 'password' => $password])) {
-            return back()->withErrors([
-                'login' => 'Invalid Credentials',
+            throw ValidationException::withMessages([
+                'login' => ['Invalid Credentials'],
             ]);
         }
         $request->session()->regenerate();
