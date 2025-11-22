@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\Auth\OtpController;
 
 
 $staticPages = [
@@ -28,10 +29,17 @@ foreach ($associate as $item) {
 }
 
 
-Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:3,5');
-Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:3,5');
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
+Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
 
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
+Route::get('/verify-otp', [OtpController::class, 'show'])->name('otp.show');
+Route::post('/verify-otp', [OtpController::class, 'verify'])->name('otp.verify');
+Route::post('/otp/resend', [OtpController::class, 'resend'])->name('otp.resend');
+
+
+
+Route::get('/verify-otp', [OtpController::class, 'show'])->name('otp.show');
 Route::get('/register', fn () => Inertia::render('register'))->name("register");
 Route::get('/login', fn () => Inertia::render('login'))->name('login');
 

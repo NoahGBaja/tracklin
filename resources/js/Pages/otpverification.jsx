@@ -1,23 +1,18 @@
-// resources/js/Pages/OTPVerification.jsx
-
 import React from 'react';
-import { Link, useForm } from '@inertiajs/react'; 
+import { Link, useForm, usePage, router } from '@inertiajs/react'; 
 import { Logo } from '../components/ui/attributes'; 
 
 export default function OTPVerification({ email, onNavigate }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { errors, flash } = usePage().props;
+    const { data, setData, post, processing } = useForm({
         otp_code: '',
     });
 
-    const userEmail = email || "user@example.com"; 
-    
+    const userEmail = usePage().props?.email ?? "user@kocak.com";
+
     const submit = (e) => {
         e.preventDefault();
-        if (onNavigate) {
-             onNavigate(); 
-        } else {
-             post('/check-inbox'); 
-        }
+        post(route('otp.verify'), data);
     };
 
     return (
@@ -48,16 +43,29 @@ export default function OTPVerification({ email, onNavigate }) {
                             maxLength="6"
                             required
                         />
+
+                        {errors?.otp_code && (
+                            <p className="text-red-500 text-center text-sm mt-1">
+                                {errors.otp_code}
+                            </p>
+                        )}
                         
                         <div className="text-sm text-center text-[#0026A4]">
-                            <Link href="#" className="underline cursor-pointer hover:opacity-75">
+                            <button
+                                type="button"
+                                onClick={() => router.post(route('otp.resend'))}
+                                className="mt-auto bg-[#1976D2] hover:bg-[#42A5F5] text-white text-lg py-3 rounded-2xl shadow-md active:scale-95 transition border-2 border-[#0026A4]"
+                            >
                                 Resend code
-                            </Link>
+                            </button>
                         </div>
                         
-                        <button type="submit" 
-                        className="mt-auto bg-[#1976D2] hover:bg-[#42A5F5] text-white text-lg py-3 rounded-2xl shadow-md active:scale-95 transition border-2 border-[#0026A4]">
-                            Verify
+                        <button 
+                            type="submit" 
+                            className="mt-auto bg-[#1976D2] hover:bg-[#42A5F5] text-white text-lg py-3 rounded-2xl shadow-md active:scale-95 transition border-2 border-[#0026A4]"
+                            disabled={processing}
+                        >
+                            {processing ? 'Verifying...' : 'Verify'}
                         </button>
                     </form>
                 </div>

@@ -9,8 +9,24 @@ use Inertia\Inertia;
 
 class TaskController extends Controller
 {
+<<<<<<< HEAD
     // ==================== PAGE: /todolist ====================
     public function index(Request $request)
+=======
+    public function index()
+{
+    $tasks = Task::where('user_id', auth()->id())
+                ->orderBy('date', 'asc')
+                ->orderBy('time', 'asc')
+                ->get();
+
+    return inertia('todolist', [
+        'tasks' => $tasks
+    ]);
+}
+
+    public function todolist()
+>>>>>>> 5e9964d (otp)
     {
         $user = $request->user(); // atau Auth::user()
 
@@ -24,8 +40,12 @@ class TaskController extends Controller
         ]);
     }
 
+<<<<<<< HEAD
     // (opsional, sebenernya nggak perlu punya todolist() lagi)
     public function todolist(Request $request)
+=======
+    public function schedule()
+>>>>>>> 5e9964d (otp)
     {
         return $this->index($request);
     }
