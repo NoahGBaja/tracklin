@@ -596,7 +596,7 @@ export default function SchedulePage({ tasks: initialTasks }) {
                   newDate.setFullYear(parseInt(e.target.value));
                   setCalendarMonth(newDate);
                 }}
-                className="border px-2 py-1 rounded"
+                className="border px-2 py-1 rounded "
               >
                 {Array.from({ length: 10 }, (_, i) => {
                   const year = today.getFullYear() - 5 + i;

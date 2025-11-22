@@ -21,9 +21,6 @@ export default function Home() {
   return (
     <div className="fixed inset-0 flex flex-col">
       <Header role={role} />
-      {/* <Header key={role} role={role} /> */}
-      {/* <Header role={role} userData={userData}/> */}
-      {/* <Header showProfile={showProfile} setShowProfile={setShowProfile} role={role} /> */}
       <div className='min-h-full'>
         <div className='flex h-[10%] w-full'/> 
         <div className='flex flex-row w-[100%] h-[15%]'>

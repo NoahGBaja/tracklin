@@ -69,3 +69,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 });
 
+
+Route::get('/whoami', function () {
+    return [
+        'auth_id' => auth()->id(),
+        'session' => session()->all(),
+    ];
+});

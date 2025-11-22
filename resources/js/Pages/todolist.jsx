@@ -1,33 +1,33 @@
 'use client'
 
 import '../../css/app.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/ui/header'
 import { Trash, Calendar, Logo, PencilEdit } from '../components/ui/attributes'
-import { Link } from '@inertiajs/react'
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react'
 
-// Ambil CSRF token dari meta tag
-const csrfToken =
-  typeof document !== 'undefined'
-    ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    : null
+const getCsrfToken = () =>
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
 
 export default function ToDoList({ tasks: initialTasks }) {
-  // ====== STATE ======
   const [tasks, setTasks] = useState(initialTasks || [])
   const [text, setText] = useState('')
   const [date, setDate] = useState(todayLocal())
   const [time, setTime] = useState('')
 
-  // ====== POPUP STATES ======
   const [showPopup, setShowPopup] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [popupText, setPopupText] = useState('')
   const [popupHour, setPopupHour] = useState(null)
   const [popupMinute, setPopupMinute] = useState(null)
 
-  // ====== HELPERS ======
+  const [toast, setToast] = useState(null)
+
+  const showToast = (message) => {
+    setToast(message)
+    setTimeout(() => setToast(null), 2500)
+  }
+
   function todayLocal() {
     const d = new Date()
     const y = d.getFullYear()
@@ -39,24 +39,35 @@ export default function ToDoList({ tasks: initialTasks }) {
   const pad = (n) => String(n).padStart(2, '0')
 
   const goBackFresh = () => {
-  window.history.back();
-  setTimeout(() => {
-    router.reload({
-      preserveScroll: true,
-      preserveState: false
-    });
-  }, 80);
-};
+    window.history.back()
+    setTimeout(() => {
+      router.reload({
+        preserveScroll: true,
+        preserveState: false,
+      })
+    }, 80)
+  }
 
+  const isToday = (dateStr) => dateStr === todayLocal()
 
-  // ====== BACKEND CALLS ======
+  const isTimeInFutureToday = (dateStr, hh, mm) => {
+    if (!isToday(dateStr)) return true
+
+    const now = new Date()
+    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+    const selectedMinutes = hh * 60 + mm
+
+    return selectedMinutes > nowMinutes
+  }
+
   const addTaskToDB = async (payload) => {
     const res = await fetch('/tasks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: JSON.stringify(payload),
     })
@@ -71,7 +82,8 @@ export default function ToDoList({ tasks: initialTasks }) {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: JSON.stringify(payload),
     })
@@ -85,22 +97,44 @@ export default function ToDoList({ tasks: initialTasks }) {
       method: 'DELETE',
       headers: {
         Accept: 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest',
       },
     })
 
     if (!res.ok) throw new Error(await res.text())
   }
 
-  // ====== ACTIONS ======
 
   const handleAddTask = async () => {
-    if (!text.trim()) return alert('Task cannot be empty.')
+    if (!text.trim()) {
+      showToast('Task cannot be empty.')
+      return
+    }
+
+    if (!time) {
+      showToast('Time is required.')
+      return
+    }
+
+    const [hhStr, mmStr] = time.split('.')
+    const hh = Number(hhStr)
+    const mm = Number(mmStr || '0')
+
+    if (Number.isNaN(hh) || Number.isNaN(mm)) {
+      showToast('Invalid time.')
+      return
+    }
+
+    if (!isTimeInFutureToday(date || todayLocal(), hh, mm)) {
+      showToast('Time must be later than the current time.')
+      return
+    }
 
     const payload = {
       text: text.trim(),
       date: date || todayLocal(),
-      time: time ? time : null,
+      time: time,
     }
 
     try {
@@ -109,8 +143,9 @@ export default function ToDoList({ tasks: initialTasks }) {
       setText('')
       setDate(todayLocal())
       setTime('')
+      showToast('Task added.')
     } catch (err) {
-      alert('Failed to add task.')
+      showToast('Failed to add task.')
     }
   }
 
@@ -121,10 +156,10 @@ export default function ToDoList({ tasks: initialTasks }) {
       })
 
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? updated : t))
+        prev.map((t) => (t.id === task.id ? updated : t)),
       )
     } catch (err) {
-      alert('Failed to update task.')
+      showToast('Failed to update task.')
     }
   }
 
@@ -134,12 +169,12 @@ export default function ToDoList({ tasks: initialTasks }) {
     try {
       await deleteTaskFromDB(task.id)
       setTasks((prev) => prev.filter((t) => t.id !== task.id))
+      showToast('Task deleted.')
     } catch (err) {
-      alert('Failed to delete task.')
+      showToast('Failed to delete task.')
     }
   }
 
-  // ====== POPUP HANDLERS ======
 
   const openPopup = (task) => {
     setEditingTask(task)
@@ -158,12 +193,30 @@ export default function ToDoList({ tasks: initialTasks }) {
   }
 
   const savePopup = async () => {
-    if (!popupText.trim()) return alert('Task cannot be empty!')
+    if (!popupText.trim()) {
+      showToast('Task cannot be empty.')
+      return
+    }
 
-    const formattedTime =
-      popupHour !== null && popupMinute !== null
-        ? `${pad(popupHour)}.${pad(popupMinute)}`
-        : null
+    if (popupHour === null || popupMinute === null) {
+      showToast('Time is required.')
+      return
+    }
+
+    const hh = Number(popupHour)
+    const mm = Number(popupMinute)
+
+    if (Number.isNaN(hh) || Number.isNaN(mm)) {
+      showToast('Invalid time.')
+      return
+    }
+
+    if (!isTimeInFutureToday(editingTask.date, hh, mm)) {
+      showToast('Time must be later than the current time.')
+      return
+    }
+
+    const formattedTime = `${pad(hh)}.${pad(mm)}`
 
     try {
       const updated = await updateTaskInDB(editingTask.id, {
@@ -172,16 +225,16 @@ export default function ToDoList({ tasks: initialTasks }) {
       })
 
       setTasks((prev) =>
-        prev.map((t) => (t.id === editingTask.id ? updated : t))
+        prev.map((t) => (t.id === editingTask.id ? updated : t)),
       )
 
       setShowPopup(false)
+      showToast('Task updated.')
     } catch (err) {
-      alert('Failed to save changes.')
+      showToast('Failed to save changes.')
     }
   }
 
-  // ====== FILTER TODAY TASKS ======
   const today = todayLocal()
   const todayTasks = (tasks || []).filter((t) => t.date === today)
 
@@ -192,8 +245,6 @@ export default function ToDoList({ tasks: initialTasks }) {
       <div className="flex flex-col w-full h-full">
         <div className="flex flex-col w-full h-full justify-start items-center mt-10">
           <div className="flex flex-col w-[90%] items-center">
-
-            {/* Top bar */}
             <div className="w-full flex justify-between items-center mb-4">
               <p
                 onClick={goBackFresh}
@@ -206,7 +257,6 @@ export default function ToDoList({ tasks: initialTasks }) {
               </div>
             </div>
 
-            {/* Input row */}
             <div className="flex flex-wrap w-full justify-start items-center gap-3 mb-4 -mt-2">
               <div className="relative w-[60%]">
                 <p
@@ -297,7 +347,6 @@ export default function ToDoList({ tasks: initialTasks }) {
               </Link>
             </div>
 
-            {/* Task list */}
             <div
               className="flex flex-col w-full bg-white/90 border-4 border-blue-800 rounded-3xl p-6 overflow-y-auto shadow-xl"
               style={{ height: '55vh' }}
@@ -332,13 +381,13 @@ export default function ToDoList({ tasks: initialTasks }) {
                         </p>
 
                         <p className="text-base text-blue-800 opacity-70">
-                          Due: {task.time ? `${task.date} • ${task.time}` : task.date}
+                          Due:{' '}
+                          {task.time ? `${task.date} • ${task.time}` : task.date}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex gap-3 opacity-100">
-                      {/* EDIT BUTTON */}
                       <button
                         onClick={() => openPopup(task)}
                         className="hover:opacity-70 text-blue-600"
@@ -346,8 +395,6 @@ export default function ToDoList({ tasks: initialTasks }) {
                         <PencilEdit size={2} />
                       </button>
 
-
-                      {/* DELETE BUTTON */}
                       <button
                         onClick={() => handleDelete(task)}
                         className="hover:opacity-70 transition text-red-600"
@@ -363,11 +410,9 @@ export default function ToDoList({ tasks: initialTasks }) {
         </div>
       </div>
 
-      {/* ======================= POPUP MODAL ======================= */}
       {showPopup && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
           <div className="bg-[#0D47A1] border-4 border-[#1646A9] text-blue-900 p-6 rounded-2xl shadow-xl w-[90%] max-w-md">
-
             <h2 className="text-white text-2xl font-bold mb-4">
               Edit Task ✏️
             </h2>
@@ -384,25 +429,41 @@ export default function ToDoList({ tasks: initialTasks }) {
             <div className="flex justify-between gap-2 mb-6">
               <input
                 type="number"
-                value={popupHour ?? ""}
+                value={popupHour !== null ? pad(popupHour) : ""}
                 onChange={(e) => {
-                  const v = e.target.value
-                  setPopupHour(v === "" ? null : Math.min(23, Math.max(0, Number(v))))
+                  let v = e.target.value
+
+                  if (v === "") {
+                    setPopupHour(null)
+                    return
+                  }
+
+                  let num = Math.min(23, Math.max(0, Number(v)))
+                  setPopupHour(num)
                 }}
                 placeholder="HH"
                 className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"
               />
 
+
               <input
                 type="number"
-                value={popupMinute ?? ""}
+                value={popupMinute !== null ? pad(popupMinute) : ""}
                 onChange={(e) => {
-                  const v = e.target.value
-                  setPopupMinute(v === "" ? null : Math.min(59, Math.max(0, Number(v))))
+                  let v = e.target.value
+
+                  if (v === "") {
+                    setPopupMinute(null)
+                    return
+                  }
+
+                  let num = Math.min(59, Math.max(0, Number(v)))
+                  setPopupMinute(num)
                 }}
                 placeholder="MM"
                 className="bg-white w-1/2 border border-blue-400 rounded-xl p-2 text-blue-800"
               />
+
             </div>
 
             <div className="flex justify-end gap-3">
@@ -421,6 +482,12 @@ export default function ToDoList({ tasks: initialTasks }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-[#0D47A1] text-white px-4 py-2 rounded-xl shadow-lg border border-blue-300 text-sm z-50">
+          {toast}
         </div>
       )}
     </div>

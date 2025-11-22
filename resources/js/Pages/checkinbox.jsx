@@ -1,4 +1,3 @@
-// resources/js/Pages/CheckInbox.jsx
 
 import React from 'react';
 import { Link } from '@inertiajs/react'; 
@@ -20,7 +19,6 @@ export default function CheckInbox({ email, onNavigate }) {
 
                 <div className="flex flex-col items-center bg-white/90 p-10 rounded-3xl shadow-2xl w-full border-2 border-[#0026A4] min-h-[500px] justify-between">
                 
-                    {/* Content Section */}
                     <div className="flex flex-col items-center gap-4 mt-8">
                         <p className="text-blue-400 text-2xl font-semibold text-center mb-4">Check Your Inbox!</p>
                         
@@ -29,14 +27,12 @@ export default function CheckInbox({ email, onNavigate }) {
                             The link will expire shortly, so please use it right away.
                         </p>
                         
-                        {/* Ikon Mail */}
                         <Mail className="w-16 h-16 text-[#1976D2] mt-4"/>
                     </div>
                     
-                    {/* Button Section */}
                     <Link
                         href="#"
-                        onClick={(e) => { e.preventDefault(); onNavigate(); }} // Panggil navigasi ke Login
+                        onClick={(e) => { e.preventDefault(); onNavigate(); }}
                         className="w-full bg-[#1976D2] hover:bg-[#42A5F5] text-white text-lg py-3 rounded-2xl shadow-md transition border-2 border-[#0026A4] text-center"
                     >
                         Login Again
