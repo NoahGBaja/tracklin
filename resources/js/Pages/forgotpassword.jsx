@@ -10,7 +10,6 @@ export default function ForgotPassword({ onNavigate }) {
 
     const submit = (e) => {
         e.preventDefault();
-        // Untuk demo desain, panggil navigasi lokal
         if (onNavigate) {
              onNavigate(data.email); 
         } else {

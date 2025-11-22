@@ -15,7 +15,7 @@ class Task extends Model
         'date',
         'time',
         'completed',
-    ];
+    ];  
 
     public function user()
     {

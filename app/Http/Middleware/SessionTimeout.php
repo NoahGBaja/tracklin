@@ -23,7 +23,7 @@ class SessionTimeout
         $lastActivity = session('lastActivity');
         $loginTime = session('loginTime');
 
-        if ($lastActivity && $now->diffInMinute($lastActivity) >= $this->idleTimeout) {
+        if ($lastActivity && $now->diffInMinutes($lastActivity) >= $this->idleTimeout) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

@@ -5,7 +5,7 @@ import { Link, useForm } from '@inertiajs/react';
 import { Logo } from '../components/ui/attributes'; 
 
 export default function OTPVerification({ email, onNavigate }) {
-    const { data, setData, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         otp_code: '',
     });
 

@@ -18,9 +18,7 @@ $staticPages = [
     '/',
     '/about',
     '/features',
-    '/test',
-    '/forgot-password',
-    '/verify-otp',
+    '/otpverification',
     '/timer'
 ];
 
@@ -41,9 +39,9 @@ foreach ($associate as $item) {
 | Authentication Routes
 |--------------------------------------------------------------------------
 */
-Route::post('/register', [RegisterController::class, 'store']);
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:3,5');
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:3,5');
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
 Route::get('/register', fn () => Inertia::render('register'))->name("register");
 Route::get('/login', fn () => Inertia::render('login'))->name('login');
