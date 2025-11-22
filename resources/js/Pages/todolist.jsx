@@ -5,6 +5,7 @@ import { useState } from 'react'
 import Header from '../components/ui/header'
 import { Trash, Calendar, Logo, PencilEdit } from '../components/ui/attributes'
 import { Link } from '@inertiajs/react'
+import { router } from '@inertiajs/react';
 
 // Ambil CSRF token dari meta tag
 const csrfToken =
@@ -36,6 +37,17 @@ export default function ToDoList({ tasks: initialTasks }) {
   }
 
   const pad = (n) => String(n).padStart(2, '0')
+
+  const goBackFresh = () => {
+  window.history.back();
+  setTimeout(() => {
+    router.reload({
+      preserveScroll: true,
+      preserveState: false
+    });
+  }, 80);
+};
+
 
   // ====== BACKEND CALLS ======
   const addTaskToDB = async (payload) => {
@@ -184,8 +196,8 @@ export default function ToDoList({ tasks: initialTasks }) {
             {/* Top bar */}
             <div className="w-full flex justify-between items-center mb-4">
               <p
-                onClick={() => window.history.back()}
-                className="text-white text-6xl font-bold cursor-pointer hover:opacity-80"
+                onClick={goBackFresh}
+                className="text-white text-5xl font-bold cursor-pointer hover:opacity-80"
               >
                 ‹ back
               </p>

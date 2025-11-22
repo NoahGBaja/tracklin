@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import Header from "../components/ui/header";
 import { PencilEdit, Trash, Logo } from "../components/ui/attributes";
 import { Link } from "@inertiajs/react";
-// Ambil CSRF token dari meta tag Blade
 const csrfToken =
   typeof document !== "undefined"
     ? document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
@@ -15,7 +14,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
   const today = new Date();
   const pad = (n) => String(n).padStart(2, "0");
 
-  // ================== STATE ==================
   const [tasks, setTasks] = useState(initialTasks || []);
 
   const [startDate, setStartDate] = useState(today);
@@ -33,7 +31,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
   const [calendarMonth, setCalendarMonth] = useState(today);
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // ================== BACKEND HELPERS ==================
   const addTaskToDB = async (payload) => {
     const res = await fetch("/tasks", {
       method: "POST",
@@ -87,7 +84,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
     }
   };
 
-  // ================== WEEK NAVIGATION ==================
   const getWeekDates = (refDate) => {
     const weekDates = [];
     const startOfWeek = new Date(refDate);
@@ -102,7 +98,15 @@ export default function SchedulePage({ tasks: initialTasks }) {
 
   const weekDates = getWeekDates(startDate);
   const handleSelect = (d) => setSelectedDate(d);
-
+  const goBackFresh = () => {
+    window.history.back();
+    setTimeout(() => {
+      router.reload({
+        preserveScroll: true,
+        preserveState: false
+      });
+    }, 80);
+  };
   const goPrev = () => {
     const newStart = new Date(startDate);
     newStart.setDate(startDate.getDate() - 7);
@@ -123,7 +127,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
     setSelectedDate(newSelected);
   };
 
-  // ================== FILTER TASKS UNTUK TANGGAL TERPILIH ==================
   useEffect(() => {
     const selectedDateStr = `${selectedDate.getFullYear()}-${pad(
       selectedDate.getMonth() + 1
@@ -144,7 +147,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
     setTasksForSelectedDate(filtered);
   }, [selectedDate, tasks]);
 
-  // ================== OVERDUE CHECK (UI ONLY) ==================
   useEffect(() => {
     const checkOverdue = () => {
       const now = new Date();
@@ -166,7 +168,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
     return () => clearInterval(id);
   }, []);
 
-  // ================== ACTIONS ==================
   const toggleComplete = async (id) => {
     const current = tasks.find((t) => t.id === id);
     if (!current) return;
@@ -240,7 +241,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
 
     try {
       if (editingTask) {
-        // update task existing
         const updated = await updateTaskInDB(editingTask.id, {
           text: popupText.trim(),
           time: formattedTime,
@@ -250,7 +250,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
           prev.map((t) => (t.id === editingTask.id ? updated : t))
         );
       } else {
-        // create task baru
         const created = await addTaskToDB({
           text: popupText.trim(),
           date: selectedDateStr,
@@ -279,7 +278,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
     }
   };
 
-  // ================== UI ==================
   return (
     <div className="fixed inset-0 flex flex-col">
       <Header role="user" />
@@ -288,8 +286,8 @@ export default function SchedulePage({ tasks: initialTasks }) {
         <div className="flex flex-col w-[90%] items-center">
           <div className="w-full flex justify-between items-center mb-4">
             <p
-              onClick={() => window.history.back()}
-              className="text-white text-6xl font-bold cursor-pointer hover:opacity-80"
+              onClick={goBackFresh}
+              className="text-white text-5xl font-bold cursor-pointer hover:opacity-80"
             >
               ‹ back
             </p>
@@ -386,7 +384,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
           </div>
 
           <div className="flex w-full items-start">
-            {/* Task list */}
             <div
               className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 overflow-y-auto mr-25"
               style={{ width: "68%", height: "53vh" }}
@@ -477,7 +474,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
               </div>
             </div>
 
-            {/* Daily Progress */}
             <div
               className="bg-white/90 border-4 border-blue-800 rounded-3xl shadow-xl p-6 mt-[-108px]"
               style={{ width: "30%", height: "64vh" }}
@@ -571,7 +567,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
         </div>
       </div>
 
-      {/* Calendar popup */}
       {showCalendar && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
           <div className="bg-white border-4 text-[#0D47A1] p-4 rounded-2xl shadow-xl w-[400px]">
@@ -687,7 +682,6 @@ export default function SchedulePage({ tasks: initialTasks }) {
         </div>
       )}
 
-      {/* Add/Edit popup */}
       {showPopup && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
           <div className="bg-[#0D47A1] border-4 border-[#1646A9] text-blue-900 p-6 rounded-2xl shadow-xl w-[90%] max-w-md">
